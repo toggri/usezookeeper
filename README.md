@@ -3,7 +3,7 @@
 ## install
 
 ```
-$ pip3 install kazoo
+$ pip3 install kazoo 
 ```
 
 ## referance
