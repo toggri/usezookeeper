@@ -1,12 +1,18 @@
 # use kazoo
 
-## install
+## 1.install
 
 ```
 $ pip3 install kazoo 
 ```
 
-## set config 
+## 2.need something for db connection
+
+```
+$ pip3 install PyMySQL
+```
+
+## 3.set config 
 
 ```
 $vi config.py
@@ -23,6 +29,6 @@ DBNAME='databasename'
 DBSQL='Query'
 ```
 
-## referance
+## 4.referance
 * [kazoodocs](http://kazoo.readthedocs.io/en/latest/basic_usage.html)
 
