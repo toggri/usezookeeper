@@ -1,17 +1,18 @@
 from kazoo.client import KazooClient
 import json
 import pymysql
+import urllib
 import config
 
 def saveinfo(cur,params, sql=''):
 
-    print("params : {}".format(params))
     query = DBSQL
-    cur.execute(query)
-
+    val = (params.get('collection'),params.get('shard'),params.get('range'),params.get('state'),urllib.parse.urlencode(params.get('replica')))
+    try:
+        cur.execute(query,val)
+    except pymysql.Error as e:
+        print(e)
     return
-
-
 
 if __name__ == "__main__":
 
@@ -77,7 +78,7 @@ if __name__ == "__main__":
                 print(replica[1].get('node_name')) # node info
                 print(replica[1].get('state')) # node info
    
-                params.update({'collections':'tibuzz'})
+                params.update({'collection':'tibuzz'})
                 params.update({'shard':sname})
                 params.update({'range':srange})
                 params.update({'state':sstate})
@@ -89,4 +90,5 @@ if __name__ == "__main__":
         print("Error ")
     finally:
         zk.stop()
+        db.commit()
         db.close()
