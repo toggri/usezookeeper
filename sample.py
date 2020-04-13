@@ -5,6 +5,17 @@ import urllib
 import re, sys
 import config
 
+# truncate tables solr_shards, solr_replicas
+def truncDatas(cur):
+    try:
+        cur.execute("TRUNCATE TABLE solr_shards")
+        print("truncate solr_shards done.")
+        cur.execute("TRUNCATE TABLE solr_replicas")
+        print("truncate solr_replicas done.")
+    except pymysql.Error as e:
+        print(e)
+    return
+
 # Insert Shard info
 def saveinfo(cur,params):
 
@@ -89,7 +100,9 @@ if __name__ == "__main__":
         shards = tibuzz.get("shards")
         #print("statejson.tibuzz.shards  : {}".format(shards))
         #print("statejson.tibuzz.shards keys  : {}".format(shards.keys()))
-    
+   
+        # truncate old data solr_shards, solr_replicas
+        truncDatas(cur)
         #
         for item in shards.items():
             params = {}
