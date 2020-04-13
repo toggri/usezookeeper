@@ -26,7 +26,9 @@ DBHOST='2.2.2.2'
 DBUSER='userid'
 DBPASSWD='password'
 DBNAME='databasename'
-DBSQL='Query'
+DBSQL="replace into solr_shards (`collection`, `shard_name`, `range`, `state`, `replicas`) values (%s, %s, %s, %s, %s)"
+DBSQL2="replace into solr_replicas (`shard_name`, `core_node`, `core`, `base_url`, `node_ip`, `state`, `leader`) values (%s, %s, %s, %s, %s, %s, %s)"
+DBSQL3="update solr_replicas set `usage`=%s where `core` = %s"
 ```
 
 ## 4.referance

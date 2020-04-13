@@ -13,8 +13,34 @@ def truncDatas(cur):
         cur.execute("TRUNCATE TABLE solr_replicas")
         print("truncate solr_replicas done.")
     except pymysql.Error as e:
-        print(e)
+        print("truncDatas DB Error : {}".format(e))
+    except Exception as e:
+        print("truncDatas Error : {}".format(e))
+        sys.exit(0)
+
     return
+#
+def updateReplicaUsage(r,s):
+    # update solr_replicas set usage=%s where core = %s
+    query = DBSQL3
+    val = (s,r)
+    try:
+        cur.execute(query,val)
+    except pymysql.Error as e:
+        print("updateReplicaUsage DB Error : {}".format(e))
+    except Exception as e:
+        print("updateReplicaUsage Error : {}".format(e))
+        sys.exit(0)
+
+    return
+
+# get replica disk usage
+def getDiskUsage(ip):
+    # per server
+    path ="/disk_usage/shard_{}".format(ip)
+    sh_usage = zk.get(path) 
+
+    return sh_usage
 
 # Insert Shard info
 def saveinfo(cur,params):
@@ -23,9 +49,12 @@ def saveinfo(cur,params):
     val = (params.get('collection'),params.get('shard'),params.get('range'),params.get('state'),urllib.parse.urlencode(params.get('replica')))
     try:
         cur.execute(query,val)
-        print("shard : {}".format(params.get('shard')))
+        #print("shard : {}".format(params.get('shard')))
     except pymysql.Error as e:
-        print(e)
+        print("saveinfo DB Error : {}".format(e))
+    except Exception as e:
+        print("saveinfo Error : {}".format(e))
+        sys.exit(0)
     return
 
 # Insert Replica info
@@ -34,20 +63,22 @@ def saveReplicaInfo(cur,params):
     query = DBSQL2
     try:
         node_ip = (re.findall(r'[0-9]+(?:\.[0-9]+){3}', rparams.get('base_url')))[0]
+        if node_ip in NODES :
+            None
+        else:
+            NODES.append(node_ip)
 
         isLeader = 0 if rparams.get('leader') == 'false' else 1
 
         val = (rparams.get('shard'),rparams.get('core_node'),rparams.get('core'),rparams.get('base_url'),node_ip,rparams.get('state'),isLeader)
         #print("val : {}".format(val))
 
-        try:
-            cur.execute(query,val)
-        except pymysql.Error as e:
-            print(e)
-            return
+        cur.execute(query,val)
 
+    except pymysql.Error as e:
+        print("saveReplicaInfo DB Error : {}".format(e))
     except Exception as e:
-        print(e)
+        print("saveReplicaInfo Error : {}".format(e))
         sys.exit(0)
 
     return
@@ -60,11 +91,14 @@ if __name__ == "__main__":
     DBNAME = config.DBNAME
     DBSQL=config.DBSQL
     DBSQL2=config.DBSQL2
+    DBSQL3=config.DBSQL3
 
     ZHOSTS = config.ZHOSTS
     
     db = pymysql.connect(DBHOST,DBUSER,DBPASSWD,DBNAME)
     cur = db.cursor()
+
+    NODES=[]
 
     try:
         zk = KazooClient(hosts=ZHOSTS,read_only=True)
@@ -110,7 +144,7 @@ if __name__ == "__main__":
             srange = item[1].get('range','')
             sstate = item[1].get('state','')
             replicas = item[1].get('replicas',{})
-            print("replicas : {}".format(replicas))
+            #print("replicas : {}".format(replicas))
             params.update({'collection':'tibuzz'})
             params.update({'shard':sname})
             params.update({'range':srange})
@@ -128,8 +162,22 @@ if __name__ == "__main__":
                 rparams.update({'leader':replica[1].get('leader','false')})
                 saveReplicaInfo(cur,rparams)
 
+        # get replica usage 
+        for ip in NODES:
+            sh_usage = getDiskUsage(ip) 
+            #print("sh_usage : {}".format(json.loads(sh_usage[0])))
+            js_sh_usage = json.loads(sh_usage[0])
+            for r in js_sh_usage:
+                s = js_sh_usage.get(r,0)
+                #update replica usage 
+                r = r.replace('/DATA/solr/solr-6.4.0/server/solr/','')
+                r = r.replace('/DATA/solr/solr-6.6.0/server/solr/','')
+                r = r.replace('/DATA/solr/','')
+                #print("r {} \t s {}".format(r,s))
+                updateReplicaUsage(r,s)
+            
     except Exception as e:
-        print("Error : {}".format(e))
+        print("Main Error : {}".format(e))
 
     finally:
         zk.stop()
