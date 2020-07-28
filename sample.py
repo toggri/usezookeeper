@@ -172,6 +172,7 @@ if __name__ == "__main__":
                 #update replica usage 
                 r = r.replace('/DATA/solr/solr-6.4.0/server/solr/','')
                 r = r.replace('/DATA/solr/solr-6.6.0/server/solr/','')
+                r = r.replace('/DATA/solr/server/solr/','')
                 r = r.replace('/DATA/solr/','')
                 #print("r {} \t s {}".format(r,s))
                 updateReplicaUsage(r,s)
